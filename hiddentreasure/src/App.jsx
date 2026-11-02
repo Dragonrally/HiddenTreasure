@@ -1,18 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { ComingSoonSplash } from "./components/public/ComingSoonSplash";
+import React, { useState } from "react";
+import ComingSoonSplash from "./public/comingsoonsplash/ComingSoonSplash";
 import { AdminHeader } from "./components/admin/AdminHeader";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { MicDiagnosticsView } from "./components/diagnostics/MicDiagnosticsView";
 import { useMicrophone } from "./hooks/UseMicrophone";
 
 export default function App() {
-  // Explicit route indexer: "splash", "admin-dashboard", or "admin-diagnostics"
-  const [currentRoute, setCurrentRoute] = useState(() => {
-    const hash = window.location.hash.replace("#/", "");
-    if (hash === "admin/diagnostics") return "admin-diagnostics";
-    if (hash === "admin") return "admin-dashboard";
-    return "splash";
-  });
+  // Argon Controller State: "splash" | "admin-dashboard" | "admin-diagnostics"
+  const [currentView, setCurrentView] = useState("splash");
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -21,25 +16,13 @@ export default function App() {
 
   const micHook = useMicrophone();
 
-  // Sync route changes to URL hash
-  useEffect(() => {
-    if (currentRoute === "splash") {
-      window.location.hash = "#/splash";
-    } else if (currentRoute === "admin-dashboard") {
-      window.location.hash = "#/admin";
-    } else if (currentRoute === "admin-diagnostics") {
-      window.location.hash = "#/admin/diagnostics";
-      micHook.loadAudioDevices();
-    }
-  }, [currentRoute]);
-
   const handleLogin = (e) => {
     e.preventDefault();
     if (passwordInput === adminPassword) {
       setShowLoginModal(false);
       setPasswordInput("");
       setAuthError("");
-      setCurrentRoute("admin-dashboard");
+      setCurrentView("admin-dashboard");
     } else {
       setAuthError("Incorrect Admin Password");
     }
@@ -47,32 +30,33 @@ export default function App() {
 
   const handleLock = () => {
     micHook.stopMicrophone();
-    setCurrentRoute("splash");
+    setCurrentView("splash");
   };
 
-  // --- ROUTE 1: MICROPHONE DIAGNOSTICS PAGE ---
-  if (currentRoute === "admin-diagnostics") {
+  // --- VIEW 1: MICROPHONE DIAGNOSTICS SUITE ---
+  if (currentView === "admin-diagnostics") {
     return (
       <MicDiagnosticsView
-        onBack={() => setCurrentRoute("admin-dashboard")}
+        onBack={() => setCurrentView("admin-dashboard")}
+        onSplash={() => setCurrentView("splash")}
         micHook={micHook}
       />
     );
   }
 
-  // --- ROUTE 2: ADMIN COMMAND CENTER ---
-  if (currentRoute === "admin-dashboard") {
+  // --- VIEW 2: ADMIN COMMAND CENTER ---
+  if (currentView === "admin-dashboard") {
     return (
       <div className="min-h-screen bg-amber-50/40 text-amber-950 font-sans flex flex-col">
         <AdminHeader onLock={handleLock} />
         <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
-          <AdminDashboard onNavigateDiagnostics={() => setCurrentRoute("admin-diagnostics")} />
+          <AdminDashboard onNavigateDiagnostics={() => setCurrentView("admin-diagnostics")} />
         </main>
       </div>
     );
   }
 
-  // --- ROUTE 3: FRONT DOOR SPLASH (DEFAULT) ---
+  // --- VIEW 3: PUBLIC COMING SOON SPLASH (DEFAULT) ---
   return (
     <ComingSoonSplash
       showLoginModal={showLoginModal}
